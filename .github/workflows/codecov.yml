@@ -1,0 +1,29 @@
+name: Code Coverage Report
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+      - name: Install dependency packages
+        run: |
+         sudo apt-get install jq
+         sudo curl -L -o /usr/bin/opa https://openpolicyagent.org/downloads/v0.39.0/opa_linux_amd64_static
+         sudo chmod 755 /usr/bin/opa
+
+      - name: Run unittests for policies
+        run: |
+         TEST_FILES="test policies unittests unittests/test_data"
+         /usr/bin/opa test --coverage --format json $TEST_FILES | { T=`mktemp`; tee "$${T}"; /usr/bin/opa eval --format pretty --input "$${T}" --data hack/simplecov.rego data.simplecov.from_opa > coverage.json; rm -f "$${T}" || true ; } | jq -j -r 'if .coverage < 100 then "ERROR: Code coverage threshold not met: got \(.coverage) instead of 100.00\n" | halt_error(1) else "" end'
+         pwd
+         ls -l coverage.json
+
+      - name: Upload test coverage report
+        uses: codecov/codecov-action@v3
+
