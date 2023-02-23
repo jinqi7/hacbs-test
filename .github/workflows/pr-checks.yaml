@@ -156,7 +156,7 @@ jobs:
          ls -l coverage.json
 
       - name: Upload test coverage report
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v2
         if: always()
 
   bash_unittests:
